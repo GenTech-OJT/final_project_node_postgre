@@ -1,12 +1,12 @@
 const express = require("express")
 const router = express.Router()
 
-const bookController = require('../controllers/employee.controller')
+const employeeController = require('../controllers/employee.controller')
 
-router.get("/", bookController.getAll)
-router.get("/:id", bookController.getById)
-router.post("/", bookController.create)
-router.put("/:id", bookController.updateById)
-router.delete("/:id", bookController.deleteById)
+router.get("/", employeeController.getEmployees)
+// router.get("/:id", bookController.getById)
+// router.post("/", bookController.create)
+// router.put("/:id", bookController.updateById)
+// router.delete("/:id", bookController.deleteById)
 
 module.exports = router

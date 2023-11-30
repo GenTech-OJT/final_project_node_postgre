@@ -6,8 +6,13 @@ require('dotenv').config()
 app.use(express.json())
 
 
-const bookRouter = require('./routes/employee.router')
+const employeeRouter = require('./routes/employee.router')
 
-app.use("/api/v1/books", bookRouter)
+app.use("/employees", employeeRouter)
+
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
+  });
 
 app.listen(process.env.PORT, () => console.log("Server is running on port 5000"))

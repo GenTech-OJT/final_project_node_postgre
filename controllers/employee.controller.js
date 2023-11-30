@@ -1,71 +1,58 @@
-const postgre = require('../database')
-const bookController = {
-    getAll: async(req, res) => {
-        try {
-            const { rows } = await postgre.query("select * from books")
-            res.json({msg: "OK", data: rows})
-        } catch (error) {
-            res.json({msg: error.msg})
-        }
-    },
-    getById: async(req, res) => {
-        try {
-            const { rows } = await postgre.query("select * from books where book_id = $1", [req.params.id])
+const postgre = require("../database");
 
-            if (rows[0]) {
-                return res.json({msg: "OK", data: rows})
-            }
+const employeeController = {
+  getEmployees: async (req, res) => {
+    try {
+      let {
+        page = 1,
+        limit = 10,
+        search = "",
+        sort = "id",
+        order = "asc",
+      } = req.query;
+      const offset = (page - 1) * limit;
 
-            res.status(404).json({msg: "not found"})
-        } catch (error) {
-            res.json({msg: error.msg})
-        }
-    },
-    create: async(req, res) => {
-        try {
-            const { name, price } = req.body
+      // Construct the WHERE clause for the search parameter
+      let whereClause = "";
+      if (search) {
+        whereClause = `WHERE (name ILIKE '%${search}%' OR code ILIKE '%${search}%')`;
+      }
 
-            const sql = 'INSERT INTO books(name, price) VALUES($1, $2) RETURNING *'
+      // Construct the ORDER BY clause for the sort and order parameters
+      let orderByClause = `ORDER BY ${sort} ${order}`;
 
-            const { rows } = await postgre.query(sql, [name, price])
+      const employeesQuery = {
+        text: `SELECT * FROM employees ${whereClause} ${orderByClause} LIMIT $1 OFFSET $2`,
+        values: [limit, offset],
+      };
 
-            res.json({msg: "OK", data: rows[0]})
+      const countQuery = {
+        text: `SELECT COUNT(*) FROM employees ${whereClause}`,
+      };
 
-        } catch (error) {
-            res.json({msg: error.msg})
-        }
-    },
-    updateById: async(req, res) => {
-        try {
-            const { name, price } = req.body
+      const employeesResponse = await postgre.query(employeesQuery);
+      const countResponse = await postgre.query(countQuery);
 
-            const sql = 'UPDATE books set name = $1, price = $2 where book_id = $3 RETURNING *'
+      const employees = employeesResponse.rows;
+      const total = parseInt(countResponse.rows[0].count);
 
-            const { rows } = await postgre.query(sql, [name, price, req.params.id])
-
-            res.json({msg: "OK", data: rows[0]})
-
-        } catch (error) {
-            res.json({msg: error.msg})
-        }
-    },
-    deleteById: async(req, res) => {
-        try {
-            const sql = 'DELETE FROM books where book_id = $1 RETURNING *'
-
-            const { rows } = await postgre.query(sql, [req.params.id])
-
-            if (rows[0]) {
-                return res.json({msg: "OK", data: rows[0]})
-            }
-
-            return res.status(404).json({msg: "not found"})
-            
-
-        } catch (error) {
-            res.json({msg: error.msg})
-        }
+      res.json({
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+        },
+        sort: {
+          field: sort,
+          order: order,
+        },
+        data: employees,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Internal server error" });
     }
-}
+  },
+};
 
-module.exports = bookController
+module.exports = employeeController;
